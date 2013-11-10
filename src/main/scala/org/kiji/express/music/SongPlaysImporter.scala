@@ -25,6 +25,7 @@ import com.twitter.scalding._
 
 import org.kiji.express._
 import org.kiji.express.flow._
+import org.kiji.express.flow.SchemaSpec._
 
 /**
  * Imports information about users playing tracks into a Kiji table.
@@ -68,8 +69,5 @@ class SongPlaysImporter(args: Args) extends KijiJob(args) {
       .write(KijiOutput(
           args("table-uri"),
           'playTime,
-          Map('songId -> QualifiedColumnRequestOutput(
-              "info",
-              "track_plays",
-              useDefaultReaderSchema = true))))
+          Map('songId -> QualifiedColumnRequestOutput("info", "track_plays"))))
 }

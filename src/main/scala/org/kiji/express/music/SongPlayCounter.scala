@@ -44,8 +44,8 @@ class SongPlayCounter(args: Args) extends KijiJob(args) {
    *     listened to.
    * @return the song ids that a user has listened to.
    */
-  def songsListenedTo(slice: KijiSlice[String]): Seq[String] = {
-    slice.cells.map { cell => cell.datum }
+  def songsListenedTo(slice: KijiSlice[CharSequence]): Seq[String] = {
+    slice.cells.map { cell => cell.datum.toString }
   }
 
   // This Scalding pipeline does the following.

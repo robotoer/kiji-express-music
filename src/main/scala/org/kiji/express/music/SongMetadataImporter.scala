@@ -25,6 +25,7 @@ import com.twitter.scalding._
 
 import org.kiji.express._
 import org.kiji.express.flow._
+import org.kiji.express.music.avro.SongMetadata
 
 /**
  * Imports metadata about songs into a Kiji table.
@@ -48,15 +49,21 @@ class SongMetadataImporter(args: Args) extends KijiJob(args) {
    * @return a Scala tuple whose fields correspond to the fields from the JSON record.
    */
   def parseJson(json: String): (String, String, String, String, String, Long, Long) = {
-    val metadata = JSON.parseFull(json).get.asInstanceOf[Map[String, Any]]
-    (metadata.get("song_id").get.asInstanceOf[String],
-        metadata.get("song_name").get.asInstanceOf[String],
-        metadata.get("album_name").get.asInstanceOf[String],
-        metadata.get("artist_name").get.asInstanceOf[String],
-        metadata.get("genre").get.asInstanceOf[String],
-        metadata.get("tempo").get.asInstanceOf[String].toLong,
-        metadata.get("duration").get.asInstanceOf[String].toLong)
+    val metadata = JSON.parseFull(json).get.asInstanceOf[Map[String, String]]
+    (metadata.get("song_id").get,
+        metadata.get("song_name").get,
+        metadata.get("album_name").get,
+        metadata.get("artist_name").get,
+        metadata.get("genre").get,
+        metadata.get("tempo").get.toLong,
+        metadata.get("duration").get.toLong)
   }
+
+  /**
+   * Retrieve the Avro [[org.apache.avro.Schema]] from the `SongMetadata` record.
+   * @return the Avro `Schema` of a `SongMetada` record.
+   */
+  def metadataSchema = SongMetadata.getClassSchema
 
   // This Scalding pipeline does the following:
   // 1. Reads JSON records from an input file in HDFS.
@@ -72,11 +79,10 @@ class SongMetadataImporter(args: Args) extends KijiJob(args) {
         parseJson
       }
       .map('song_id -> 'entityId) { songId: String => EntityId(songId) }
-      .packAvro(('song_name, 'album_name, 'artist_name, 'genre, 'tempo, 'duration) -> 'metadata)
+      .packGenericRecord(
+          ('song_name, 'album_name, 'artist_name, 'genre, 'tempo, 'duration) -> 'metadata)(
+              metadataSchema)
       .write(KijiOutput(
           args("table-uri"),
-          Map('metadata -> QualifiedColumnRequestOutput(
-              "info",
-              "metadata",
-              useDefaultReaderSchema = true))))
+          Map('metadata -> QualifiedColumnRequestOutput("info", "metadata"))))
 }

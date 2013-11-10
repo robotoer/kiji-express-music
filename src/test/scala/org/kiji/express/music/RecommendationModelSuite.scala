@@ -19,21 +19,25 @@
 
 package org.kiji.express.music
 
+import scala.collection.JavaConverters.seqAsJavaListConverter
+
 import org.kiji.express.util.Resources.doAndClose
 import org.kiji.express.util.Resources.doAndRelease
 
 import com.twitter.scalding.Args
 import com.twitter.scalding.IterableSource
 
-import org.kiji.express.AvroRecord
 import org.kiji.express.EntityId
 import org.kiji.express.KijiSuite
-import org.kiji.express.flow._
+import org.kiji.express.flow.KijiJob
+import org.kiji.express.flow.KijiOutput
+import org.kiji.express.flow.QualifiedColumnRequestOutput
 import org.kiji.modeling.ScoreProducerJobBuilder
 import org.kiji.modeling.config.ModelDefinition
 import org.kiji.modeling.config.ModelEnvironment
 import org.kiji.schema.Kiji
 import org.kiji.schema.KijiDataRequest
+import org.kiji.express.music.avro.{TopSongs, SongCount}
 
 /**
  * Provides tests for the KijiExpress modeling workflow that makes song recommendations.
@@ -114,7 +118,7 @@ class RecommendationModelSuite extends KijiSuite {
         (EntityId("user-1"), "song-1"),
         (EntityId("user-2"), "song-2")), ('entityId, 'trackPlay)
     ).write(KijiOutput(usersTableURI, Map('trackPlay ->
-        QualifiedColumnRequestOutput("info", "track_plays", useDefaultReaderSchema = true))))
+        QualifiedColumnRequestOutput("info", "track_plays"))))
   }.run
   assert(userTableImportResult, "Failed to import track plays to user table in test setup.")
 
@@ -122,16 +126,14 @@ class RecommendationModelSuite extends KijiSuite {
   // sample songs. song-1 is played most frequently after song-0, song-2 the most frequently
   // after song-1, and so on.
   val songsTableImportResult: Boolean = new KijiJob(new Args(Map())) {
-    IterableSource(List(
-        (EntityId("song-0"),
-            AvroRecord("top_songs" -> List(AvroRecord("song_id" -> "song-1", "count" -> 1L)))),
-        (EntityId("song-1"),
-            AvroRecord("top_songs" -> List(AvroRecord("song_id" -> "song-2", "count" -> 2L)))),
-        (EntityId("song-2"),
-            AvroRecord("top_songs" -> List(AvroRecord("song_id" -> "song-3", "count" -> 3L))))),
+    IterableSource(
+        List(
+            (EntityId("song-0"), new TopSongs(List(new SongCount("song-1", 1L)).asJava)),
+            (EntityId("song-1"), new TopSongs(List(new SongCount("song-2", 2L)).asJava)),
+            (EntityId("song-2"), new TopSongs(List(new SongCount("song-3", 3L)).asJava))),
         ('entityId, 'topNextSongs)
     ).write(KijiOutput(songsTableURI, Map('topNextSongs ->
-        QualifiedColumnRequestOutput("info", "top_next_songs", useDefaultReaderSchema = true))))
+        QualifiedColumnRequestOutput("info", "top_next_songs"))))
   }.run
   assert(songsTableImportResult, "Failed to import top next songs lists in test setup.")
 
