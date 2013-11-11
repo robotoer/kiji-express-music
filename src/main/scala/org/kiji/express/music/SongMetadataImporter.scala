@@ -71,7 +71,7 @@ class SongMetadataImporter(args: Args) extends KijiJob(args) {
   //    extracted from the JSON record.
   // 3. Transforms the song id for each song into an entity id for the songs table.
   // 4. Packs song name, album name, artist name, genre, tempo, and duration for the song
-  //    into an Avro record.
+  //    into a generic Avro record with the SongMetadata schema.
   // 5. Writes the Avro records to the column "info:metadata" in a row for the song in a Kiji
   //    table.
   TextLine(args("input"))
