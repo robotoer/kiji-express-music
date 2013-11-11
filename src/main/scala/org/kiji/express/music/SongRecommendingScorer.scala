@@ -22,8 +22,8 @@ package org.kiji.express.music
 import java.util.Random
 
 import org.kiji.express.EntityId
-import org.kiji.modeling.Scorer
 import org.kiji.express.music.avro.TopSongs
+import org.kiji.modeling.Scorer
 
 /**
  * Recommends the song most frequently played after the song a user has most recently
@@ -60,7 +60,7 @@ class SongRecommendingScorer extends Scorer {
       // then get the first record in that list and extract the field "song_id" from it. This
       // will be the id of the song most frequently played after the user's most recently
       // listened to track.
-      songsListRecord.getTopSongs.get(0).getSongId.toString
+      songsListRecord.getTopSongs.get(0).getSongId
     }
     // If nextSong is 'Some' recommendation, return that recommendation,
     // if it's 'None' generate a random song name and use that as the recommendation.

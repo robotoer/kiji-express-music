@@ -50,9 +50,12 @@ class SongPlaysImporter(args: Args) extends KijiJob(args) {
    */
   def parseJson(json: String): (String, Long, String) = {
     val playRecord = JSON.parseFull(json).get.asInstanceOf[Map[String, Any]]
-    (playRecord.get("user_id").get.asInstanceOf[String],
-        playRecord.get("play_time").get.asInstanceOf[String].toLong,
-        playRecord.get("song_id").get.asInstanceOf[String])
+
+    val userId = playRecord.get("user_id").get.asInstanceOf[String]
+    val playTime = playRecord.get("play_time").get.asInstanceOf[String].toLong
+    val songId = playRecord.get("song_id").get.asInstanceOf[String]
+
+    (userId, playTime, songId)
   }
 
   // This Scalding pipeline does the following:
@@ -68,5 +71,12 @@ class SongPlaysImporter(args: Args) extends KijiJob(args) {
       .write(KijiOutput(
           args("table-uri"),
           'playTime,
-          Map('songId -> QualifiedColumnRequestOutput("info", "track_plays"))))
+          Map(
+              'songId -> QualifiedColumnRequestOutput(
+                  "info",
+                  "track_plays",
+                  schemaSpec = SchemaSpec.DefaultReader
+              )
+          )
+      ))
 }

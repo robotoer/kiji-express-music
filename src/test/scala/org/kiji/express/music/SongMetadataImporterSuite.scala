@@ -22,10 +22,10 @@ package org.kiji.express.music
 import scala.collection.mutable.Buffer
 
 import com.twitter.scalding._
-import org.apache.avro.generic.GenericRecord
 
 import org.kiji.express._
 import org.kiji.express.flow._
+import org.kiji.express.music.avro._
 import org.kiji.schema.EntityId
 
 /**
@@ -34,7 +34,7 @@ import org.kiji.schema.EntityId
 class SongMetadataImporterSuite extends KijiSuite {
   // Get a Kiji to use for the test and record the Kiji URI of the songs table we'll test against.
   val kiji = makeTestKiji("SongMetadataImporterSuite")
-  val tableURI = kiji.getURI().toString + "/songs"
+  val tableURI = kiji.getURI.toString + "/songs"
 
   // Execute the DDL shell commands in music-schema.ddl to create the tables for the music
   // tutorial, including the songs table.
@@ -57,17 +57,17 @@ class SongMetadataImporterSuite extends KijiSuite {
    *
    * @param generatedMetadata contains a tuple for each row written to by the importer.
    */
-  def validateTest(generatedMetadata: Buffer[(EntityId, KijiSlice[GenericRecord])]) {
+  def validateTest(generatedMetadata: Buffer[(EntityId, Iterable[Cell[SongMetadata]])]) {
     assert(1 === generatedMetadata.size)
     // Get the first song metadata record written.
-    val metadata = generatedMetadata(0)._2.getFirstValue()
+    val metadata = generatedMetadata(0)._2.head.datum
     // And confirm it contains the fields we expect.
-    assert("song name-0" === metadata.get("song_name").toString)
-    assert("artist-1" === metadata.get("artist_name").toString)
-    assert("album-1" === metadata.get("album_name").toString)
-    assert("genre5.0" === metadata.get("genre").toString)
-    assert(100L === metadata.get("tempo").asInstanceOf[Long])
-    assert(240L === metadata.get("duration").asInstanceOf[Long])
+    assert("song name-0" === metadata.getSongName)
+    assert("artist-1" === metadata.getArtistName)
+    assert("album-1" === metadata.getAlbumName)
+    assert("genre5.0" === metadata.getGenre)
+    assert(100L === metadata.getTempo)
+    assert(240L === metadata.getDuration)
   }
 
   // Run a test of the import job, running in Cascading's local runner.
@@ -77,7 +77,12 @@ class SongMetadataImporterSuite extends KijiSuite {
         .arg("input", "song-metadata.json")
         .source(TextLine("song-metadata.json"), testInput)
         .sink(KijiOutput(tableURI, Map('metadata ->
-            QualifiedColumnRequestOutput("info", "metadata"))))(validateTest)
+            QualifiedColumnRequestOutput(
+                "info",
+                "metadata",
+                schemaSpec = SchemaSpec.Specific(classOf[SongMetadata])
+            )
+        )))(validateTest)
         .run
         .finish
   }
@@ -89,7 +94,12 @@ class SongMetadataImporterSuite extends KijiSuite {
     .arg("input", "song-metadata.json")
     .source(TextLine("song-metadata.json"), testInput)
     .sink(KijiOutput(tableURI, Map('metadata ->
-        QualifiedColumnRequestOutput("info", "metadata"))))(validateTest)
+        QualifiedColumnRequestOutput(
+            "info",
+            "metadata",
+            schemaSpec = SchemaSpec.Specific(classOf[SongMetadata])
+        )
+    )))(validateTest)
     .runHadoop
     .finish
   }

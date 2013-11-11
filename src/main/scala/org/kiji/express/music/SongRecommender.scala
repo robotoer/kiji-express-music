@@ -19,6 +19,8 @@
 
 package org.kiji.express.music
 
+import scala.collection.JavaConverters._
+
 import com.twitter.scalding._
 
 import org.kiji.express._
@@ -43,8 +45,13 @@ class SongRecommender(args: Args) extends KijiJob(args) {
    * @param songs from the TopNextSongs record.
    * @return the most popular song.
    */
-  def getMostPopularSong(songs: KijiSlice[TopSongs]): String = {
-    songs.getFirstValue().getTopSongs.get(0).getSongId.toString
+  def getMostPopularSong(songs: Iterable[Cell[TopSongs]]): String = {
+    val songRecord = songs.head.datum
+    val topSongs = songRecord
+        .getTopSongs
+        .asScala
+    val mostPopularSong = topSongs.head
+    return mostPopularSong.getSongId
   }
 
   /**
@@ -72,9 +79,13 @@ class SongRecommender(args: Args) extends KijiJob(args) {
    */
   KijiInput(args("users-table"),
       Map(QualifiedColumnRequestInput("info", "track_plays") -> 'trackPlays))
-      .map('trackPlays -> 'lastTrackPlayed) {
-           slice: KijiSlice[CharSequence] => slice.getFirstValue().toString }
+      .map('trackPlays -> 'lastTrackPlayed) { slice: Iterable[Cell[String]] =>
+        slice.head.datum.toString
+      }
       .joinWithSmaller('lastTrackPlayed -> 'songId, recommendedSong)
-      .write(KijiOutput(args("users-table"),
-          Map('nextSong -> QualifiedColumnRequestOutput("info", "next_song_rec"))))
+      .write(KijiOutput(args("users-table"), Map('nextSong ->
+          QualifiedColumnRequestOutput(
+              "info",
+              "next_song_rec",
+              schemaSpec = SchemaSpec.Specific(classOf[TopSongs])))))
 }

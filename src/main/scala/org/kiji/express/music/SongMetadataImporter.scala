@@ -59,12 +59,6 @@ class SongMetadataImporter(args: Args) extends KijiJob(args) {
         metadata.get("duration").get.toLong)
   }
 
-  /**
-   * Retrieve the Avro [[org.apache.avro.Schema]] from the `SongMetadata` record.
-   * @return the Avro `Schema` of a `SongMetada` record.
-   */
-  def metadataSchema = SongMetadata.getClassSchema
-
   // This Scalding pipeline does the following:
   // 1. Reads JSON records from an input file in HDFS.
   // 2. Flattens each JSON record into a tuple with fields corresponding to the song metadata
@@ -79,10 +73,11 @@ class SongMetadataImporter(args: Args) extends KijiJob(args) {
         parseJson
       }
       .map('song_id -> 'entityId) { songId: String => EntityId(songId) }
-      .packGenericRecord(
-          ('song_name, 'album_name, 'artist_name, 'genre, 'tempo, 'duration) -> 'metadata)(
-              metadataSchema)
+      .pack[SongMetadata](('song_name, 'album_name, 'artist_name, 'genre, 'tempo, 'duration) -> 'metadata)
       .write(KijiOutput(
           args("table-uri"),
-          Map('metadata -> QualifiedColumnRequestOutput("info", "metadata"))))
+          Map('metadata -> QualifiedColumnRequestOutput(
+              "info",
+              "metadata",
+              schemaSpec = SchemaSpec.Specific(classOf[SongMetadata])))))
 }
