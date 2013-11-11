@@ -41,15 +41,16 @@ import org.kiji.express.music.avro._
  */
 class TopNextSongs(args: Args) extends KijiJob(args) {
   /**
-   * Transforms a slice of song ids into a collection of tuples `(s1, s2)`
-   * signifying that `s2` appeared after `s1` in the slice, chronologically.
+   * Transforms a slice of song ids into a collection of tuples `(s1, s2)` signifying that `s2`
+   * appeared after `s1` in the slice, chronologically.
    *
    * @param slice of song ids representing a user's play history.
    * @return a list of song bigrams.
    */
-  def bigrams(slice: KijiSlice[CharSequence]): List[(String, String)] = {
+  def bigrams(slice: KijiSlice[String]): List[(String, String)] = {
     slice.orderChronologically().cells.sliding(2)
-        .map { window => window(0).datum.toString -> window(1).datum.toString }
+        .map { itr => itr.iterator }
+        .map { itr => (itr.next().datum, itr.next().datum) }
         .toList
   }
 
@@ -69,7 +70,7 @@ class TopNextSongs(args: Args) extends KijiJob(args) {
   // 2. Transforms each user's play history into a collection of bigrams that record when
   //    one song was played after another.
   // 3. Counts the number of times each song was played after another.
-  // 4. Creates a SongCount Avro specific record from each bigram.
+  // 4. Creates a song count Avro record from each bigram.
   // 5. For each song S, creates a list of songs sorted by the number of times the song was
   //    played after S.
   // 6. Converts each list of SongCount records into an Avro-compatible java.util.List.
@@ -86,5 +87,8 @@ class TopNextSongs(args: Args) extends KijiJob(args) {
       .pack[TopSongs]('top_songs -> 'top_next_songs)
       .map('first_song -> 'entityId) { firstSong: String => EntityId(firstSong) }
       .write(KijiOutput(args("songs-table"),
-          Map('top_next_songs -> QualifiedColumnRequestOutput("info", "top_next_songs"))))
+          Map('top_next_songs -> QualifiedColumnRequestOutput(
+              "info",
+              "top_next_songs",
+              schemaSpec = SchemaSpec.Specific(classOf[TopSongs])))))
 }

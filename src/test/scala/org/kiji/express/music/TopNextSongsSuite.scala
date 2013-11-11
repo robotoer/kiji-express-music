@@ -31,6 +31,7 @@ import org.kiji.express.flow.KijiInput
 import org.kiji.express.flow.KijiOutput
 import org.kiji.express.flow.QualifiedColumnRequestInput
 import org.kiji.express.flow.QualifiedColumnRequestOutput
+import org.kiji.express.flow.SchemaSpec
 import org.kiji.express.music.avro.TopSongs
 
 /**
@@ -83,19 +84,19 @@ class TopNextSongsSuite extends KijiSuite {
     topSongForEachSong.foreach {
       case ("song-0", topSongs) => {
         assert(2 === topSongs.size)
-        assert("song-1" === topSongs.get(0).getSongId)
+        assert("song-1" === topSongs.get(0).getSongId.toString)
         assert(2 === topSongs.get(0).getCount)
-        assert("song-0" === topSongs.get(1).getSongId)
+        assert("song-0" === topSongs.get(1).getSongId.toString)
         assert(1 === topSongs.get(1).getCount)
       }
       case ("song-1", topSongs) => {
         assert(1 === topSongs.size)
-        assert("song-2" === topSongs.get(0).getSongId)
+        assert("song-2" === topSongs.get(0).getSongId.toString)
         assert(2 === topSongs.get(0).getCount)
       }
       case ("song-2", topSongs) => {
         assert(1 === topSongs.size)
-        assert("song-1" === topSongs.get(0).getSongId)
+        assert("song-1" === topSongs.get(0).getSongId.toString)
         assert(1 === topSongs.get(0).getCount)
       }
     }
@@ -109,7 +110,10 @@ class TopNextSongsSuite extends KijiSuite {
             Map(QualifiedColumnRequestInput("info", "track_plays", flow.all)
                 -> 'playlist)), testInput)
         .sink(KijiOutput(songsURI, Map('top_next_songs ->
-            QualifiedColumnRequestOutput("info", "top_next_songs"))))(validateTest)
+            QualifiedColumnRequestOutput(
+                "info",
+                "top_next_songs",
+                schemaSpec = SchemaSpec.Specific(classOf[TopSongs])))))(validateTest)
         .run
         .finish
   }
@@ -123,7 +127,10 @@ class TopNextSongsSuite extends KijiSuite {
                 -> 'playlist)),
             testInput)
         .sink(KijiOutput(songsURI, Map('top_next_songs ->
-            QualifiedColumnRequestOutput("info", "top_next_songs")))) { validateTest }
+            QualifiedColumnRequestOutput(
+                "info",
+                "top_next_songs",
+                schemaSpec = SchemaSpec.Specific(classOf[TopSongs]))))) { validateTest }
         .runHadoop
         .finish
   }
