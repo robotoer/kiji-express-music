@@ -19,11 +19,12 @@
 
 package org.kiji.express.music
 
+import scala.collection.JavaConverters.seqAsJavaListConverter
+
 import com.twitter.scalding._
 
 import org.kiji.express._
 import org.kiji.express.flow._
-import org.kiji.express.flow.SchemaSpec._
 import org.kiji.express.music.avro._
 
 /**
@@ -80,6 +81,7 @@ class TopNextSongs(args: Args) extends KijiJob(args) {
       .groupBy(('first_song, 'song_id)) { _.size('count) }
       .pack[SongCount](('song_id, 'count) -> 'song_count)
       .groupBy('first_song) { sortNextSongs }
+      .map('top_songs -> 'top_songs) { ts: List[SongCount] => ts.asJava }
       .pack[TopSongs]('top_songs -> 'top_next_songs)
       .map('first_song -> 'entityId) { firstSong: String => EntityId(firstSong) }
       .write(KijiOutput(args("songs-table"),

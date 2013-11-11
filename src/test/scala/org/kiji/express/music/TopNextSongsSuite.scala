@@ -102,7 +102,7 @@ class TopNextSongsSuite extends KijiSuite {
         .source(KijiInput(usersURI,
             Map(QualifiedColumnRequestInput("info", "track_plays", all) -> 'playlist)), testInput)
         .sink(KijiOutput(songsURI, Map('top_next_songs ->
-            QualifiedColumnRequestOutput("info", "top_next_songs")))) { validateTest }
+            QualifiedColumnRequestOutput("info", "top_next_songs"))))(validateTest)
         .run
         .finish
   }
