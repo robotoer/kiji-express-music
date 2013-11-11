@@ -32,12 +32,13 @@ import org.kiji.express.KijiSuite
 import org.kiji.express.flow.KijiJob
 import org.kiji.express.flow.KijiOutput
 import org.kiji.express.flow.QualifiedColumnRequestOutput
+import org.kiji.express.music.avro.SongCount
+import org.kiji.express.music.avro.TopSongs
 import org.kiji.modeling.ScoreProducerJobBuilder
 import org.kiji.modeling.config.ModelDefinition
 import org.kiji.modeling.config.ModelEnvironment
 import org.kiji.schema.Kiji
 import org.kiji.schema.KijiDataRequest
-import org.kiji.express.music.avro.{TopSongs, SongCount}
 
 /**
  * Provides tests for the KijiExpress modeling workflow that makes song recommendations.

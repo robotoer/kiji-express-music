@@ -19,15 +19,21 @@
 
 package org.kiji.express.music
 
-import com.twitter.scalding.JobTest
-import scala.collection.mutable.Buffer
 import scala.collection.JavaConverters.seqAsJavaListConverter
 
-import org.kiji.express._
-import org.kiji.express.flow._
+import com.twitter.scalding.JobTest
+import scala.collection.mutable.Buffer
+
 import org.kiji.express.EntityId
 import org.kiji.express.KijiSlice
-import org.kiji.express.music.avro.{TopSongs, SongCount}
+import org.kiji.express.KijiSuite
+import org.kiji.express.flow.KijiInput
+import org.kiji.express.flow.KijiOutput
+import org.kiji.express.flow.KijiSource
+import org.kiji.express.flow.QualifiedColumnRequestInput
+import org.kiji.express.flow.QualifiedColumnRequestOutput
+import org.kiji.express.music.avro.SongCount
+import org.kiji.express.music.avro.TopSongs
 
 class SongRecommenderSuite extends KijiSuite {
 

@@ -21,10 +21,16 @@ package org.kiji.express.music
 
 import scala.collection.mutable.Buffer
 
-import com.twitter.scalding._
+import com.twitter.scalding.JobTest
 
-import org.kiji.express._
-import org.kiji.express.flow._
+import org.kiji.express.EntityId
+import org.kiji.express.KijiSlice
+import org.kiji.express.KijiSuite
+import org.kiji.express.flow
+import org.kiji.express.flow.KijiInput
+import org.kiji.express.flow.KijiOutput
+import org.kiji.express.flow.QualifiedColumnRequestInput
+import org.kiji.express.flow.QualifiedColumnRequestOutput
 import org.kiji.express.music.avro.TopSongs
 
 /**
@@ -100,7 +106,8 @@ class TopNextSongsSuite extends KijiSuite {
         .arg("users-table", usersURI)
         .arg("songs-table", songsURI)
         .source(KijiInput(usersURI,
-            Map(QualifiedColumnRequestInput("info", "track_plays", all) -> 'playlist)), testInput)
+            Map(QualifiedColumnRequestInput("info", "track_plays", flow.all)
+                -> 'playlist)), testInput)
         .sink(KijiOutput(songsURI, Map('top_next_songs ->
             QualifiedColumnRequestOutput("info", "top_next_songs"))))(validateTest)
         .run
@@ -112,7 +119,8 @@ class TopNextSongsSuite extends KijiSuite {
         .arg("users-table", usersURI)
         .arg("songs-table", songsURI)
         .source(KijiInput(usersURI,
-            Map(QualifiedColumnRequestInput("info", "track_plays", all) -> 'playlist)),
+            Map(QualifiedColumnRequestInput("info", "track_plays", maxVersions = flow.all)
+                -> 'playlist)),
             testInput)
         .sink(KijiOutput(songsURI, Map('top_next_songs ->
             QualifiedColumnRequestOutput("info", "top_next_songs")))) { validateTest }
